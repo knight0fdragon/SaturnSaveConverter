@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SaturnSaveConverter": {
+      "commandName": "Project",
+      "commandLineArgs": "SaveFiles\\SSF\\Joined.bin"
+    }
+  }
+}
