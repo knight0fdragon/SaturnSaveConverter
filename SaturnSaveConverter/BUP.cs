@@ -12,9 +12,17 @@ namespace SaturnSaveConverter
     {
         static public int SectorSize(byte[] data)
         {
+            var sectorLine = 0;
             try
             {
-                return (Encoding.UTF8.GetString(data.Skip(64).Take(16).ToArray()) == "BackUpRam Format") ? 0x200 : 0x40;
+
+
+                while (Encoding.UTF8.GetString(data.Skip(sectorLine * 16).Take(16).ToArray()) == "BackUpRam Format")
+                {
+                    System.Diagnostics.Debug.Print(Encoding.UTF8.GetString(data.Skip(sectorLine * 16).Take(16).ToArray()));
+                    sectorLine++;
+                }
+                return sectorLine * 16;
             }
             catch { }
             return 0x40;
@@ -72,19 +80,24 @@ namespace SaturnSaveConverter
             Date = new DateTime(1980, 1, 1).AddMinutes((int)file.Date < 0 ? 0 : file.Date);
             Date2 = new DateTime(1980, 1, 1).AddMinutes((int)file.Date < 0 ? 0 : file.Date);
 
-            var trueLength = (Data.Length) + 0x20;//add on header
-            var numberOfBlocks = (int)Math.Ceiling(trueLength / (float)(blockSize ));
-            var bytesLeft = trueLength % (blockSize);
-            var bytesForBlocks = numberOfBlocks << 1;
-            bytesForBlocks -= bytesLeft;
-            if (bytesForBlocks > 0)
+            
+            var numberOfGameBlocks = (int)Math.Ceiling(Data.Length / (float)(blockSize));
+
+            var freespace = numberOfGameBlocks * blockSize - Data.Length;
+
+            freespace -= 0x1E; //size of header
+
+            freespace -= numberOfGameBlocks * 2;
+            if(freespace < 0)
             {
-                var additionalBlocks = (bytesForBlocks + ((blockSize - (bytesForBlocks % blockSize)))) / blockSize;
-                numberOfBlocks += additionalBlocks;
-
+                var bytesNeeded = Math.Abs(freespace);
+                var numberOfadditionalBlocks = (int)Math.Ceiling(bytesNeeded / (float)(blockSize));
+                numberOfGameBlocks += numberOfadditionalBlocks;
             }
+            
+            
 
-            NumberOfBlocks = (ushort)numberOfBlocks;
+            NumberOfBlocks = (ushort)numberOfGameBlocks;
 
             Language = file.Language;
             FileLength = (uint)file.Data.Length;

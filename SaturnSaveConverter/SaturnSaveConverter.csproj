@@ -16,7 +16,16 @@
     <None Update="SaveFiles\Mednafen\SFORCE31_01.bkr">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="SaveFiles\Mednafen\Stellar Assault SS.bcr">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="SaveFiles\Mednafen\Stellar Assault SS.bkr">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="SaveFiles\SSF\ExternalBackupRAM.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="SaveFiles\SSF\ExternalBackupRAM_-_Battles_10-15.bin">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="SaveFiles\SSF\HOLY_ARK_02.bin">

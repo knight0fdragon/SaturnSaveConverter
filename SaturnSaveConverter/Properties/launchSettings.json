@@ -2,7 +2,7 @@
   "profiles": {
     "SaturnSaveConverter": {
       "commandName": "Project",
-      "commandLineArgs": "SaveFiles\\SSF\\Joined.bin"
+      "commandLineArgs": "\"SaveFiles\\SSF\\ExternalBackupRAM_-_Battles_10-15.bin\""
     }
   }
 }

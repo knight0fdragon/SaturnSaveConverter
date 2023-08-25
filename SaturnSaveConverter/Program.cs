@@ -131,13 +131,14 @@ internal class Program
             if (verbatumInternal.Count == 0) verbatumInternal = Switch(verbatumExternal.ToArray());
             if (verbatumExternal.Count == 0) verbatumExternal = Switch(verbatumInternal.ToArray());
 
-
+            
             Output(name, verbatumInternal.ToArray(),"Internal", Path.Combine(Directory.GetCurrentDirectory(), "Saves", name));
             Output(name, verbatumExternal.ToArray(), "4MB", Path.Combine(Directory.GetCurrentDirectory(), "Saves", name));
 
             var blockSize = BUP.SectorSize(verbatumExternal.ToArray());
 
             var individualFiles = SeparateSaveFiles(verbatumExternal.ToArray(), blockSize);
+            blockSize = BUP.SectorSize(verbatumInternal.ToArray());
 
             var idx = 1;
 
@@ -196,22 +197,17 @@ internal class Program
             output.AddRange(data);
 
         }
-        return output;
+        return output.Concat(new byte[newSectorSize]).Take(newSectorSize).ToList();
 
     }
     static void Output(string name, byte[] verbatum,string locationName,string currentPath)
     {
+        
+        
+      
+   
         if (verbatum.Length == 0) return;
         var blockSize = BUP.SectorSize(verbatum);
-      
-        Output( name, verbatum.Concat(new byte[blockSize == 0x40 ? 0x8000 : 0x80000]).Take(blockSize == 0x40 ? 0x8000 : 0x80000).ToArray(), verbatum.Concat(new byte[0x400000]).Take(0x400000).ToArray(), locationName,currentPath);
-    }
-
-
-
-    static void Output( string name, byte[] verbatum, byte[] verbatumExpanded,string locationName, string currentPath)
-    {
-
         var path = "";
    
         var ssfPath = path = Path.Combine(currentPath,  "SSF", locationName);
@@ -249,67 +245,73 @@ internal class Program
         Directory.CreateDirectory(path);
 
 
+        var verbatumFixed = verbatum.Concat(new byte[blockSize == 0x40 ? 0x8000 : 0x80000]).Take(blockSize == 0x40 ? 0x8000 : 0x80000).ToArray();
 
         List<byte> offStartBytes = new List<byte>();
         List<byte> onStartBytes = new List<byte>();
-        List<byte> offStartBytesExpanded = new List<byte>();
-        List<byte> onStartBytesExpanded = new List<byte>();
+        
         for (int j = 0; j < verbatum.Length; j++)
         {
             offStartBytes.Add(0);
-            offStartBytes.Add(verbatum[j]);
+            offStartBytes.Add(verbatumFixed[j]);
             onStartBytes.Add(byte.MaxValue);
-            onStartBytes.Add(verbatum[j]);
+            onStartBytes.Add(verbatumFixed[j]);
         }
+
+
 
 
         File.Delete(Path.Combine(mednafenPath, Path.ChangeExtension(name, string.IsNullOrEmpty(locationName) || locationName == "Internal" ? "bkr" : "bcr" ))); ;
-        File.WriteAllBytes(Path.Combine(mednafenPath, Path.ChangeExtension(name, string.IsNullOrEmpty(locationName) || locationName == "Internal" ? "bkr" : "bcr")), verbatum.ToArray());
-        
-        File.Delete(Path.Combine(beetlePath,  Path.ChangeExtension(name, string.IsNullOrEmpty(locationName) || locationName == "Internal" ? "bkr" : "bcr")));
-        File.WriteAllBytes(Path.Combine(beetlePath,  Path.ChangeExtension(name, string.IsNullOrEmpty(locationName) || locationName == "Internal" ? "bkr" : "bcr")), verbatum.ToArray());
-        
-        File.Delete(Path.Combine(ssfPath,  Path.ChangeExtension(name, "bin")));
-        File.WriteAllBytes(Path.Combine(ssfPath, Path.ChangeExtension(name, "bin")), offStartBytes.ToArray());
-        
-        File.Delete(Path.Combine(saturnPath,  Path.ChangeExtension(name, "raw")));
-        File.WriteAllBytes(Path.Combine(saturnPath,  Path.ChangeExtension(name, "raw")), offStartBytes.ToArray());
-        
-        File.Delete(Path.Combine(giriPath,  Path.ChangeExtension(name, "bin")));
-        File.WriteAllBytes(Path.Combine(giriPath, Path.ChangeExtension(name, "bin")), onStartBytes.ToArray());
-
+        File.Delete(Path.Combine(beetlePath, Path.ChangeExtension(name, string.IsNullOrEmpty(locationName) || locationName == "Internal" ? "bkr" : "bcr")));
+        File.Delete(Path.Combine(ssfPath, Path.ChangeExtension(name, "bin")));
+        File.Delete(Path.Combine(saturnPath, Path.ChangeExtension(name, "raw")));
+        File.Delete(Path.Combine(giriPath, Path.ChangeExtension(name, "bin")));
         File.Delete(Path.Combine(yabausePath, Path.ChangeExtension(name, "bin")));
-        File.WriteAllBytes(Path.Combine(yabausePath, Path.ChangeExtension(name, "bin")), onStartBytes.ToArray());
-        
-        File.Delete(Path.Combine(kronosPath,  Path.ChangeExtension(name, "bin")));
-        File.WriteAllBytes(Path.Combine(kronosPath,  Path.ChangeExtension(name, "bin")), onStartBytes.ToArray());
-        
-        File.Delete(Path.Combine(yabasanshiroPath,  Path.ChangeExtension(name, "bin")));
-        File.WriteAllBytes(Path.Combine(yabasanshiroPath, Path.ChangeExtension(name, "bin")), onStartBytes.ToArray());
-        
+        File.Delete(Path.Combine(kronosPath, Path.ChangeExtension(name, "bin")));
+        File.Delete(Path.Combine(yabasanshiroPath, Path.ChangeExtension(name, "bin")));
         File.Delete(Path.Combine(novaPath, Path.ChangeExtension(name, "bup")));
-        File.WriteAllBytes(Path.Combine(novaPath, Path.ChangeExtension(name, "bup")), verbatum.ToArray());
-
 
         if (locationName != "Internal")
         {
-            foreach (var cname in new[] { 4,8, 16, 32 })
+            foreach (var cname in new[] { 4, 8, 16, 32 })
             {
-
                 File.Delete(Path.Combine(kronosPath.Replace($"4MB", $"{cname}MB"), Path.ChangeExtension(name, "bin")));
-                File.WriteAllBytes(Path.Combine(kronosPath.Replace($"4MB", $"{cname}MB"), Path.ChangeExtension(name, "bin")), verbatum.Concat(new byte[0x40000 * cname]).Take(0x40000 * cname).ToArray());
-
                 File.Delete(Path.Combine(yabausePath.Replace($"4MB", $"{cname}MB"), Path.ChangeExtension(name, "bin")));
-                File.WriteAllBytes(Path.Combine(yabausePath.Replace($"4MB", $"{cname}MB"), Path.ChangeExtension(name, "bin")), verbatum.Concat(new byte[0x40000 * cname]).Take(0x40000 * cname).ToArray());
-
                 File.Delete(Path.Combine(yabasanshiroPath.Replace($"4MB", $"{cname}MB"), Path.ChangeExtension(name, "bin")));
-                File.WriteAllBytes(Path.Combine(yabasanshiroPath.Replace($"4MB", $"{cname}MB"), Path.ChangeExtension(name, "bin")), verbatum.Concat(new byte[0x40000 * cname]).Take(0x40000 * cname).ToArray());
             }
         }
 
-
-        if (verbatumExpanded != null && (locationName == "Internal"))
+        if (verbatum.Length <= verbatumFixed.Length)
         {
+            File.WriteAllBytes(Path.Combine(mednafenPath, Path.ChangeExtension(name, string.IsNullOrEmpty(locationName) || locationName == "Internal" ? "bkr" : "bcr")), verbatumFixed.ToArray());
+            File.WriteAllBytes(Path.Combine(beetlePath, Path.ChangeExtension(name, string.IsNullOrEmpty(locationName) || locationName == "Internal" ? "bkr" : "bcr")), verbatumFixed.ToArray());
+            File.WriteAllBytes(Path.Combine(ssfPath, Path.ChangeExtension(name, "bin")), offStartBytes.ToArray());
+            File.WriteAllBytes(Path.Combine(saturnPath, Path.ChangeExtension(name, "raw")), offStartBytes.ToArray());
+            File.WriteAllBytes(Path.Combine(giriPath, Path.ChangeExtension(name, "bin")), onStartBytes.ToArray());
+            File.WriteAllBytes(Path.Combine(yabausePath, Path.ChangeExtension(name, "bin")), onStartBytes.ToArray());
+            File.WriteAllBytes(Path.Combine(kronosPath, Path.ChangeExtension(name, "bin")), onStartBytes.ToArray());
+            File.WriteAllBytes(Path.Combine(yabasanshiroPath, Path.ChangeExtension(name, "bin")), onStartBytes.ToArray());
+            File.WriteAllBytes(Path.Combine(novaPath, Path.ChangeExtension(name, "bup")), verbatumFixed.ToArray());
+        
+
+            if (locationName != "Internal")
+            {
+                foreach (var cname in new[] { 4, 8, 16, 32 })
+                {
+                    if (verbatum.Length <= 0x20000 * cname)
+                    {
+                        File.WriteAllBytes(Path.Combine(kronosPath.Replace($"4MB", $"{cname}MB"), Path.ChangeExtension(name, "bin")), onStartBytes.Concat(new byte[0x40000 * cname]).Take(0x40000 * cname).ToArray());
+                        File.WriteAllBytes(Path.Combine(yabausePath.Replace($"4MB", $"{cname}MB"), Path.ChangeExtension(name, "bin")), onStartBytes.Concat(new byte[0x40000 * cname]).Take(0x40000 * cname).ToArray());
+                        File.WriteAllBytes(Path.Combine(yabasanshiroPath.Replace($"4MB", $"{cname}MB"), Path.ChangeExtension(name, "bin")), onStartBytes.Concat(new byte[0x40000 * cname]).Take(0x40000 * cname).ToArray());
+                    }
+                }
+            }
+        }
+
+        if ((locationName == "Internal"))
+        {
+            var verbatumExpanded = verbatum.Concat(new byte[0x400000]).Take(0x400000).ToArray();
+            List<byte> onStartBytesExpanded = new List<byte>();
             for (int j = 0; j < verbatumExpanded.Length; j++)
             {
 
